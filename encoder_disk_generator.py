@@ -2,8 +2,17 @@
 # -*- coding: utf-8 -*-
 
 import inkex
-import simplestyle
 import math
+
+import logging
+
+logging.basicConfig(filename='/home/pq/.config/inkscape/extensions/rotaryencoder.log', filemode='w', level=logging.DEBUG)
+
+
+
+from lxml import etree
+
+from inkex.elements import Group, PathElement
 
 
 # Function for calculating a point from the origin when you know the distance
@@ -21,84 +30,84 @@ class EncoderDiskGenerator(inkex.Effect):
 
 	def __init__(self):
 		inkex.Effect.__init__(self)
-		self.OptionParser.add_option("--tab",
-					action="store", type="string",
+		self.arg_parser.add_argument("--tab",
+					action="store", type=str,
 						dest="tab", default="rotary_enc",
 					help="Selected tab")
-		self.OptionParser.add_option("--diameter",
-					action="store", type="float",
+		self.arg_parser.add_argument("--diameter",
+					action="store", type=float,
 						dest="diameter", default=0.0,
 					help="Diameter of the encoder disk")
-		self.OptionParser.add_option("--hole_diameter",
-					action="store", type="float",
+		self.arg_parser.add_argument("--hole_diameter",
+					action="store", type=float,
 					dest="hole_diameter", default=0.0,
 					help="Diameter of the center hole")
-		self.OptionParser.add_option("--segments",
-					action="store", type="int",
+		self.arg_parser.add_argument("--segments",
+					action="store", type=int,
 					dest="segments", default=0,
 					help="Number of segments")
-		self.OptionParser.add_option("--outer_encoder_diameter",
-					action="store", type="float",
+		self.arg_parser.add_argument("--outer_encoder_diameter",
+					action="store", type=float,
 					dest="outer_encoder_diameter", default=0.0,
 					help="Diameter of the outer encoder disk")
-		self.OptionParser.add_option("--outer_encoder_width",
-					action="store", type="float",
+		self.arg_parser.add_argument("--outer_encoder_width",
+					action="store", type=float,
 					dest="outer_encoder_width", default=0.0,
 					help="Width of the outer encoder disk")
-		self.OptionParser.add_option("--inner_encoder_diameter",
-					action="store", type="float",
+		self.arg_parser.add_argument("--inner_encoder_diameter",
+					action="store", type=float,
 					dest="inner_encoder_diameter", default=0.0,
 					help="Diameter of the inner encoder disk")
-		self.OptionParser.add_option("--inner_encoder_width",
-					action="store", type="float",
+		self.arg_parser.add_argument("--inner_encoder_width",
+					action="store", type=float,
 					dest="inner_encoder_width", default=0.0,
 					help="Width of the inner encoder disk")
-		self.OptionParser.add_option("--bits",
-					action="store", type="int",
+		self.arg_parser.add_argument("--bits",
+					action="store", type=int,
 					dest="bits", default=1,
 					help="Number of bits/tracks")
-		self.OptionParser.add_option("--encoder_diameter",
-					action="store", type="float",
+		self.arg_parser.add_argument("--encoder_diameter",
+					action="store", type=float,
 					dest="encoder_diameter", default=0.0,
 					help="Outer diameter of the last track")
-		self.OptionParser.add_option("--track_width",
-					action="store", type="float",
+		self.arg_parser.add_argument("--track_width",
+					action="store", type=float,
 					dest="track_width", default=0.0,
 					help="Width of one track")
-		self.OptionParser.add_option("--track_distance",
-					action="store", type="float",
+		self.arg_parser.add_argument("--track_distance",
+					action="store", type=float,
 					dest="track_distance", default=0.0,
 					help="Distance between tracks")
-		self.OptionParser.add_option("--brgc_diameter",
-					action="store", type="float",
+		self.arg_parser.add_argument("--brgc_diameter",
+					action="store", type=float,
 						dest="brgc_diameter", default=0.0,
 					help="Diameter of the encoder disk")
-		self.OptionParser.add_option("--stgc_diameter",
-					action="store", type="float",
+		self.arg_parser.add_argument("--stgc_diameter",
+					action="store", type=float,
 						dest="stgc_diameter", default=0.0,
 					help="Diameter of the encoder disk")
-		self.OptionParser.add_option("--brgc_hole_diameter",
-					action="store", type="float",
+		self.arg_parser.add_argument("--brgc_hole_diameter",
+					action="store", type=float,
 					dest="brgc_hole_diameter", default=0.0,
 					help="Diameter of the center hole")
-		self.OptionParser.add_option("--cutouts",
-					action="store", type="int",
+		self.arg_parser.add_argument("--cutouts",
+					action="store", type=int,
 					dest="cutouts", default=1,
 					help="Number of cutouts")
-		self.OptionParser.add_option("--sensors",
-					action="store", type="int",
+		self.arg_parser.add_argument("--sensors",
+					action="store", type=int,
 					dest="sensors", default=1,
 					help="Number of sensors")
-		self.OptionParser.add_option("--stgc_hole_diameter",
-					action="store", type="float",
+		self.arg_parser.add_argument("--stgc_hole_diameter",
+					action="store", type=float,
 					dest="stgc_hole_diameter", default=0.0,
 					help="Diameter of the center hole")
-		self.OptionParser.add_option("--stgc_encoder_diameter",
-					action="store", type="float",
+		self.arg_parser.add_argument("--stgc_encoder_diameter",
+					action="store", type=float,
 					dest="stgc_encoder_diameter", default=0.0,
 					help="Outer diameter of the last track")
-		self.OptionParser.add_option("--stgc_track_width",
-					action="store", type="float",
+		self.arg_parser.add_argument("--stgc_track_width",
+					action="store", type=float,
 					dest="stgc_track_width", default=0.0,
 					help="Width of track")
 
@@ -224,7 +233,7 @@ class EncoderDiskGenerator(inkex.Effect):
 	# This function creates the path for one single segment
 	def drawSegment(self, line_style, angle, segment_angle, outer_diameter, width):
 
-		path = {'style': simplestyle.formatStyle(line_style)}
+		path = {'style': str(inkex.Style(line_style))}
 		path['d'] = ''
 		outer_radius = outer_diameter / 2
 
@@ -257,7 +266,7 @@ class EncoderDiskGenerator(inkex.Effect):
 
 	# This function adds an element to the document
 	def addElement(self, element_type, group, element_attributes):
-		inkex.etree.SubElement(
+		etree.SubElement(
 			group, inkex.addNS(element_type, 'svg'),
 			element_attributes)
 
@@ -266,7 +275,7 @@ class EncoderDiskGenerator(inkex.Effect):
 		# create it
 		circle_elements = []
 		attributes = {
-			'style': simplestyle.formatStyle({'stroke': 'none', 'fill': 'black'}),
+			'style': str(inkex.Style({'stroke': 'none', 'fill': 'black'})),
 			'r': str(hole_diameter / 2)
 		}
 		if self.options.hole_diameter > 0:
@@ -274,16 +283,16 @@ class EncoderDiskGenerator(inkex.Effect):
 
 		# Attributes for the guide hole in the center hole, then create it
 		attributes = {
-			'style': simplestyle.formatStyle(
-				{'stroke': 'white', 'fill': 'white', 'stroke-width': '0.1'}),
+			'style': str(inkex.Style(
+				{'stroke': 'white', 'fill': 'white', 'stroke-width': '0.1'})),
 			'r': '1'
 		}
 		circle_elements.append(attributes)
 
 		# Attributes for the outer rim, then create it
 		attributes = {
-			'style': simplestyle.formatStyle(
-				{'stroke': 'black', 'stroke-width': '1', 'fill': 'none'}),
+			'style': str(inkex.Style(
+				{'stroke': 'black', 'stroke-width': '1', 'fill': 'none'})),
 			'r': str(diameter / 2)
 		}
 		if self.options.diameter > 0:
@@ -298,6 +307,7 @@ class EncoderDiskGenerator(inkex.Effect):
 			(self.options.bits - 1) * self.options.track_distance)) <
 			self.options.brgc_hole_diameter / 2):
 			inkex.errormsg("Innermost encoder smaller than the center hole!")
+			return
 		else:
 			segments = self.drawGrayEncoder(
 				line_style, self.options.bits,
@@ -319,8 +329,10 @@ class EncoderDiskGenerator(inkex.Effect):
 		if ((self.options.stgc_encoder_diameter / 2) -
 			self.options.stgc_track_width < self.options.stgc_hole_diameter / 2):
 			inkex.errormsg("Encoder smaller than the center hole!")
+			return
 		elif not self.validSTGrayEncoder(self.options.cutouts, self.options.sensors):
 			inkex.errormsg("Too many cutouts compared to number of sensors!")
+			return
 		else:
 			segments = self.drawSTGrayEncoder(line_style, self.options.cutouts,
 				self.options.sensors, self.options.stgc_encoder_diameter,
@@ -370,16 +382,16 @@ class EncoderDiskGenerator(inkex.Effect):
 
 		circle_elements = self.drawCircles(
 			self.options.hole_diameter, self.options.diameter)
-
 		for circle in circle_elements:
 			self.addElement('circle', group, circle)
+
 
 	def effect(self):
 
 		# Group to put all the elements in, center set in the middle of the view
-		group = inkex.etree.SubElement(self.current_layer, 'g', {
+		group = etree.SubElement(self.svg.get_current_layer(), 'g', {
 			inkex.addNS('label', 'inkscape'): 'Encoder disk',
-			'transform': 'translate' + str(self.view_center)
+			'transform': 'translate' + str(self.svg.namedview.center)
 		})
 
 		# Line style for the encoder segments
@@ -389,17 +401,17 @@ class EncoderDiskGenerator(inkex.Effect):
 			'fill': 'black'
 		}
 
-		if self.options.tab == "\"brgc\"":
+		if self.options.tab == "brgc":
 			self.effectBrgc(group, line_style)
 
-		if self.options.tab == "\"stgc\"":
+		if self.options.tab == "stgc":
 			self.effectStgc(group, line_style)
 
-		if self.options.tab == "\"rotary_enc\"":
+		if self.options.tab == "rotary_enc":
 			self.effectRotaryEnc(group, line_style)
 
 
 if __name__ == '__main__':
 	# Run the effect
 	effect = EncoderDiskGenerator()
-	effect.affect()
+	effect.run()
